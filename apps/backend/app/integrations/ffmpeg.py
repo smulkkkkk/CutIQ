@@ -1,14 +1,16 @@
 import subprocess
 
 
-def extract_audio(video_path: str, output_path: str) -> None:
+def extract_audio(video_path: str, audio_path: str) -> None:
     cmd = [
-        "ffmpeg", "-y",
+        "ffmpeg",
         "-i", video_path,
+        "-vn",
+        "-acodec", "pcm_s16le",
         "-ar", "16000",
         "-ac", "1",
-        "-f", "wav",
-        output_path,
+        audio_path,
+        "-y",
     ]
     try:
         subprocess.run(cmd, check=True, capture_output=True)
