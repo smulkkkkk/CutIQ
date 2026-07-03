@@ -48,3 +48,21 @@ async def test_send_removes_dead_connection():
     manager._connections["proj-1"] = [dead_ws]
     await manager.send_to_project("proj-1", {"stage": "failed"})
     assert dead_ws not in manager._connections.get("proj-1", [])
+
+
+@pytest.mark.asyncio
+async def test_broadcast_sends_to_all():
+    manager = ConnectionManager()
+    ws1 = MagicMock()
+    ws1.accept = AsyncMock()
+    ws1.send_text = AsyncMock()
+    ws2 = MagicMock()
+    ws2.accept = AsyncMock()
+    ws2.send_text = AsyncMock()
+
+    await manager.connect(ws1, "proj-1")
+    await manager.connect(ws2, "proj-1")
+    await manager.send_to_project("proj-1", {"stage": "completed"})
+
+    ws1.send_text.assert_awaited_once()
+    ws2.send_text.assert_awaited_once()
