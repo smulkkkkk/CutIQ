@@ -2,6 +2,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from gotrue import User
 from app.api.deps import get_current_user
+from app.workers.queue import enqueue_job
 from app.schemas.project import (
     VideoCreateRequest,
     CreateVideoResponse,
@@ -17,11 +18,10 @@ router = APIRouter()
 
 
 async def enqueue_transcription(video_id: str, project_id: str) -> str:
-    """Stub: returns a fake job_id. Task 6 replaces this with real ARQ."""
-    return str(uuid.uuid4())
+    return await enqueue_job("transcribe_video", video_id=video_id, project_id=project_id)
 
 
-@router.post("", response_model=CreateVideoResponse)
+@router.post("", status_code=201)
 async def create_video(
     body: VideoCreateRequest, current_user: User = Depends(get_current_user)
 ):
@@ -40,10 +40,10 @@ async def create_video(
         r2_key=r2_key,
     )
     upload_url = generate_presigned_upload_url(r2_key, content_type=body.content_type)
-    return CreateVideoResponse(id=video.id, upload_url=upload_url, r2_key=r2_key)
+    return {"video_id": video.id, "upload_url": upload_url}
 
 
-@router.post("/import-youtube", response_model=VideoResponse)
+@router.post("/import-youtube", status_code=202)
 async def import_youtube(
     body: YoutubeImportRequest, current_user: User = Depends(get_current_user)
 ):
@@ -72,14 +72,14 @@ async def import_youtube(
         source_url=body.url,
     )
 
-    arq_job_id = await enqueue_transcription(video.id, body.project_id)
+    job_id = await enqueue_transcription(video.id, body.project_id)
     job_repo = JobRepository()
-    job_repo.create(body.project_id, "download_youtube", arq_job_id=arq_job_id)
+    job_repo.create(body.project_id, "download_youtube", arq_job_id=job_id)
 
-    return video
+    return {"video_id": video.id, "job_id": job_id}
 
 
-@router.post("/{video_id}/process")
+@router.post("/{video_id}/process", status_code=202)
 async def process_video(
     video_id: str, current_user: User = Depends(get_current_user)
 ):
@@ -89,9 +89,9 @@ async def process_video(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
 
     vid_repo.update(video_id, status="processing")
-    arq_job_id = await enqueue_transcription(video_id, video.project_id)
+    job_id = await enqueue_transcription(video_id, video.project_id)
 
     job_repo = JobRepository()
-    job_repo.create(video.project_id, "transcribe", arq_job_id=arq_job_id)
+    job_repo.create(video.project_id, "transcribe", arq_job_id=job_id)
 
-    return {"status": "processing", "video_id": video_id}
+    return {"job_id": job_id}

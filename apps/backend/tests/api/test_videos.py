@@ -35,9 +35,10 @@ async def test_create_video_presigned_url(client):
             "project_id": "proj-1",
             "filename": "video.mp4",
         })
-    assert response.status_code == 200
+    assert response.status_code == 201
     data = response.json()
-    assert data["id"] == "vid-1"
+    assert "video_id" in data
+    assert data["video_id"] == "vid-1"
     assert "upload_url" in data
     assert data["upload_url"] == "https://r2.example.com/upload?sig=abc"
 
@@ -61,5 +62,7 @@ async def test_process_video(client):
         mock_vid_cls.return_value.get_by_id.return_value = MOCK_VIDEO
         mock_enqueue.return_value = "arq-job-123"
         response = await client.post("/api/videos/vid-1/process")
-    assert response.status_code == 200
-    assert response.json()["status"] == "processing"
+    assert response.status_code == 202
+    data = response.json()
+    assert "job_id" in data
+    assert data["job_id"] == "arq-job-123"
