@@ -8,4 +8,12 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379"
     environment: str = "development"
 
+    cloudflare_r2_endpoint: str = ""
+    cloudflare_r2_access_key: str = ""
+    cloudflare_r2_secret_key: str = ""
+    cloudflare_r2_bucket: str = "cutiq"
+
+    whisper_model: str = "medium"
+    whisper_device: str = "cpu"
+
 settings = Settings()
