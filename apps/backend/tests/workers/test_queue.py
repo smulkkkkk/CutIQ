@@ -5,7 +5,7 @@ from app.workers.queue import enqueue_job, WorkerSettings
 
 @pytest.mark.asyncio
 async def test_enqueue_job_returns_job_id():
-    with patch("app.workers.queue.get_redis_pool") as mock_pool_fn:
+    with patch("app.workers.queue.get_redis_pool", new_callable=AsyncMock) as mock_pool_fn:
         mock_pool = AsyncMock()
         mock_job = MagicMock()
         mock_job.job_id = "test-job-id"
