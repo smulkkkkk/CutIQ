@@ -1,21 +1,24 @@
+import asyncio
 import os
 import tempfile
 import yt_dlp
 from app.integrations.r2 import upload_from_path
 
 
-def get_youtube_info(url: str) -> dict:
+async def get_youtube_info(url: str) -> dict:
     ydl_opts = {"quiet": True, "no_warnings": True}
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
+        loop = asyncio.get_event_loop()
+        info = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
         return {
             "title": info.get("title", ""),
-            "duration": float(info.get("duration", 0)),
-            "thumbnail": info.get("thumbnail", ""),
+            "duration": int(info.get("duration", 0)),
+            "thumbnail_url": info.get("thumbnail", ""),
+            "uploader": info.get("uploader", ""),
         }
 
 
-def download_youtube_to_r2(url: str, r2_key: str) -> dict:
+async def download_youtube_to_r2(url: str, r2_key: str) -> dict:
     with tempfile.TemporaryDirectory() as tmpdir:
         output_template = os.path.join(tmpdir, "%(title)s.%(ext)s")
         ydl_opts = {
@@ -25,7 +28,8 @@ def download_youtube_to_r2(url: str, r2_key: str) -> dict:
             "no_warnings": True,
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
+            loop = asyncio.get_event_loop()
+            info = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=True))
             ydl.prepare_filename(info)
 
         files = os.listdir(tmpdir)
@@ -33,7 +37,7 @@ def download_youtube_to_r2(url: str, r2_key: str) -> dict:
         upload_from_path(video_file, r2_key, "video/mp4")
 
         return {
+            "r2_key": r2_key,
             "title": info.get("title", ""),
-            "duration": float(info.get("duration", 0)),
-            "filename": f"{info.get('title', 'video')}.mp4",
+            "duration": int(info.get("duration", 0)),
         }
