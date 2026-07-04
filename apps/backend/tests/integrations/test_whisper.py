@@ -14,12 +14,11 @@ def test_transcribe_returns_segments():
     mock_model = MagicMock()
     mock_model.transcribe.return_value = ([mock_segment], mock_info)
 
-    with patch("faster_whisper.WhisperModel", return_value=mock_model):
+    with patch("app.integrations.whisper.WhisperModel", return_value=mock_model):
         from app.integrations import whisper as whisper_module
-        # Reset singleton for test isolation
         whisper_module._client = None
         client = whisper_module.get_whisper_client()
-        result = client.transcribe("/tmp/audio.wav")
+        result = client.transcribe("audio.wav")
 
     assert result["language"] == "en"
     assert len(result["segments"]) == 1
