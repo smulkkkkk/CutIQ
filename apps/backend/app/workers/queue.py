@@ -3,9 +3,14 @@ from arq.connections import RedisSettings
 from app.core.config import settings
 from app.workers.transcribe import transcribe_video
 
+_pool = None
+
 
 async def get_redis_pool():
-    return await create_pool(RedisSettings.from_dsn(settings.redis_url))
+    global _pool
+    if _pool is None:
+        _pool = await create_pool(RedisSettings.from_dsn(settings.redis_url))
+    return _pool
 
 
 async def enqueue_job(function_name: str, **kwargs) -> str:

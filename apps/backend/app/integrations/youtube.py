@@ -34,7 +34,8 @@ async def download_youtube_to_r2(url: str, r2_key: str) -> dict:
 
         files = os.listdir(tmpdir)
         video_file = os.path.join(tmpdir, files[0])
-        upload_from_path(video_file, r2_key, "video/mp4")
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, upload_from_path, video_file, r2_key, "video/mp4")
 
         return {
             "r2_key": r2_key,

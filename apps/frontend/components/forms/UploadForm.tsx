@@ -41,7 +41,7 @@ export function UploadForm() {
       const project = await api.projects.create(title.trim())
 
       if (mode === 'file' && file) {
-        const { id: video_id, upload_url } = await api.videos.create(
+        const { video_id, upload_url } = await api.videos.create(
           project.id,
           file.name,
           file.type || 'video/mp4'

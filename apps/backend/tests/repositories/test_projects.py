@@ -42,7 +42,7 @@ def test_project_create():
 
 def test_project_get_by_id():
     mock_sb = MagicMock()
-    mock_sb.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value.data = MOCK_PROJECT_ROW
+    mock_sb.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = MOCK_PROJECT_ROW
     with patch("app.repositories.projects.get_supabase", return_value=mock_sb):
         from app.repositories.projects import ProjectRepository
         repo = ProjectRepository()
@@ -52,7 +52,7 @@ def test_project_get_by_id():
 
 def test_project_get_by_id_not_found():
     mock_sb = MagicMock()
-    mock_sb.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value.data = None
+    mock_sb.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = None
     with patch("app.repositories.projects.get_supabase", return_value=mock_sb):
         from app.repositories.projects import ProjectRepository
         repo = ProjectRepository()

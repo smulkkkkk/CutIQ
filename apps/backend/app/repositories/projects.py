@@ -22,7 +22,7 @@ class ProjectRepository(BaseRepository):
             self.client.table(self.table)
             .select("*")
             .eq("id", project_id)
-            .single()
+            .maybe_single()
             .execute()
         )
         if not response.data:

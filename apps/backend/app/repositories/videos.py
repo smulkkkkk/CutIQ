@@ -38,7 +38,7 @@ class VideoRepository(BaseRepository):
             self.client.table(self.table)
             .select("*")
             .eq("id", video_id)
-            .single()
+            .maybe_single()
             .execute()
         )
         if not response.data:

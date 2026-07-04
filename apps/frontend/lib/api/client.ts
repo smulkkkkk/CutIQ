@@ -42,16 +42,16 @@ export const api = {
   },
   videos: {
     create: (project_id: string, filename: string, content_type = 'video/mp4') =>
-      apiFetch<{ id: string; upload_url: string; r2_key: string }>('/api/videos', {
+      apiFetch<{ video_id: string; upload_url: string }>('/api/videos', {
         method: 'POST',
         body: JSON.stringify({ project_id, filename, content_type }),
       }),
     process: (video_id: string) =>
-      apiFetch<{ status: string; video_id: string }>(`/api/videos/${video_id}/process`, {
+      apiFetch<{ job_id: string }>(`/api/videos/${video_id}/process`, {
         method: 'POST',
       }),
     importYoutube: (project_id: string, url: string) =>
-      apiFetch<Video>('/api/videos/import-youtube', {
+      apiFetch<{ video_id: string; job_id: string }>('/api/videos/import-youtube', {
         method: 'POST',
         body: JSON.stringify({ project_id, url }),
       }),

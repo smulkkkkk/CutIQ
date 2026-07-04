@@ -36,7 +36,8 @@ async def transcribe_video(ctx: dict, *, video_id: str, project_id: str) -> None
                 from app.integrations.youtube import download_youtube_to_r2
                 await download_youtube_to_r2(video.source_url, video.r2_key)
 
-            download_to_path(video.r2_key, video_path)
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(None, download_to_path, video.r2_key, video_path)
             await emit_transcribing(project_id, 30)
 
             extract_audio(video_path, audio_path)
