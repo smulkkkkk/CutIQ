@@ -1,6 +1,7 @@
 from arq import create_pool
 from arq.connections import RedisSettings
 from app.core.config import settings
+from app.workers.transcribe import transcribe_video
 
 
 async def get_redis_pool():
@@ -23,9 +24,7 @@ async def shutdown(ctx: dict) -> None:
 
 
 class WorkerSettings:
-    # Worker functions are imported lazily to avoid circular imports.
-    # transcribe.py imports queue.py indirectly; add functions here after Task 9.
-    functions: list = []
+    functions = [transcribe_video]
     redis_settings = RedisSettings.from_dsn(settings.redis_url)
     on_startup = startup
     on_shutdown = shutdown
