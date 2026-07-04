@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
+import type { Profile, Project, Video } from '@/types'
 
 async function getAuthHeader(): Promise<Record<string, string>> {
   const supabase = createClient()
@@ -28,6 +29,31 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   auth: {
-    me: () => apiFetch<import('@/types').Profile>('/api/auth/me'),
+    me: () => apiFetch<Profile>('/api/auth/me'),
+  },
+  projects: {
+    list: () => apiFetch<Project[]>('/api/projects'),
+    create: (title: string) =>
+      apiFetch<Project>('/api/projects', {
+        method: 'POST',
+        body: JSON.stringify({ title }),
+      }),
+    get: (id: string) => apiFetch<Project>(`/api/projects/${id}`),
+  },
+  videos: {
+    create: (project_id: string, filename: string, content_type = 'video/mp4') =>
+      apiFetch<{ id: string; upload_url: string; r2_key: string }>('/api/videos', {
+        method: 'POST',
+        body: JSON.stringify({ project_id, filename, content_type }),
+      }),
+    process: (video_id: string) =>
+      apiFetch<{ status: string; video_id: string }>(`/api/videos/${video_id}/process`, {
+        method: 'POST',
+      }),
+    importYoutube: (project_id: string, url: string) =>
+      apiFetch<Video>('/api/videos/import-youtube', {
+        method: 'POST',
+        body: JSON.stringify({ project_id, url }),
+      }),
   },
 }

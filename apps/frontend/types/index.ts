@@ -21,6 +21,29 @@ export interface Project {
   updated_at: string
 }
 
+export interface Video {
+  id: string
+  project_id: string
+  source_type: 'upload' | 'youtube'
+  filename: string
+  status: 'pending' | 'processing' | 'transcribed' | 'failed'
+  source_url: string | null
+  r2_key: string | null
+  duration_seconds: number | null
+  size_bytes: number | null
+  created_at: string
+}
+
+export interface Job {
+  id: string
+  project_id: string
+  type: string
+  status: 'queued' | 'running' | 'completed' | 'failed'
+  progress: number
+  error_message: string | null
+  created_at: string
+}
+
 export interface Clip {
   id: string
   project_id: string
@@ -52,6 +75,7 @@ export interface JobProgressEvent {
     | 'completed'
     | 'failed'
   progress?: number
+  duration?: number
   clips_count?: number
   clip_id?: string
   thumbnail_url?: string
