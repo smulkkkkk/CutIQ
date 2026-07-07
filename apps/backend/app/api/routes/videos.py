@@ -39,7 +39,7 @@ async def create_video(
         filename=body.filename,
         r2_key=r2_key,
     )
-    upload_url = generate_presigned_upload_url(r2_key, content_type=body.content_type)
+    upload_url = generate_presigned_upload_url(r2_key)
     return {"video_id": video.id, "upload_url": upload_url}
 
 
