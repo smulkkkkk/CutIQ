@@ -10,6 +10,8 @@ class Settings(BaseSettings):
 
     storage_bucket: str = "cutiq"
 
+    anthropic_api_key: str = ""
+
     whisper_model: str = "medium"
     whisper_device: str = "cpu"
 
