@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from app.repositories.base import BaseRepository
 from app.core.supabase import get_supabase
 from app.models.clip import Clip
@@ -58,7 +58,7 @@ class ClipRepository(BaseRepository):
         return self._to_model(response.data)
 
     def update(self, clip_id: str, **kwargs) -> Clip:
-        kwargs["updated_at"] = datetime.utcnow().isoformat()
+        kwargs["updated_at"] = datetime.now(timezone.utc).isoformat()
         response = (
             self.client.table(self.table)
             .update(kwargs)
