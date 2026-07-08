@@ -63,6 +63,10 @@ async def transcribe_video(ctx: dict, *, video_id: str, project_id: str) -> None
 
         await emit_transcribed(project_id, video.duration_seconds or 0.0)
 
+        from app.workers.queue import enqueue_job  # local import to avoid circular import
+        arq_job_id = await enqueue_job("analyze_video", video_id=video_id, project_id=project_id)
+        job_repo.create(project_id, "analyze", arq_job_id=arq_job_id)
+
     except Exception as e:
         vid_repo.update(video_id, status="failed")
         if running_job:

@@ -54,6 +54,7 @@ async def test_transcribe_video_success_upload():
          patch("app.workers.transcribe.emit_transcribing", new_callable=AsyncMock), \
          patch("app.workers.transcribe.emit_transcribed", new_callable=AsyncMock), \
          patch("app.workers.transcribe.get_supabase", return_value=mock_sb), \
+         patch("app.workers.queue.enqueue_job", new_callable=AsyncMock, return_value="arq-job-id"), \
          patch("tempfile.TemporaryDirectory") as mock_tmpdir:
         mock_tmpdir.return_value.__enter__.return_value = "/tmp/fakedir"
         mock_tmpdir.return_value.__exit__.return_value = False
@@ -91,6 +92,7 @@ async def test_transcribe_video_success_youtube():
          patch("app.workers.transcribe.emit_transcribed", new_callable=AsyncMock), \
          patch("app.workers.transcribe.get_supabase", return_value=mock_sb), \
          patch("app.integrations.youtube.download_youtube_to_r2", mock_dl_yt), \
+         patch("app.workers.queue.enqueue_job", new_callable=AsyncMock, return_value="arq-job-id"), \
          patch("tempfile.TemporaryDirectory") as mock_tmpdir:
         mock_tmpdir.return_value.__enter__.return_value = "/tmp/fakedir"
         mock_tmpdir.return_value.__exit__.return_value = False
