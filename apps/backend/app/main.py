@@ -1,6 +1,6 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import auth, projects, videos
+from app.api.routes import auth, projects, videos, clips
 from app.websocket.manager import ws_manager
 from app.core.supabase import get_supabase
 
@@ -17,6 +17,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(projects.router, prefix="/api/projects", tags=["projects"])
 app.include_router(videos.router, prefix="/api/videos", tags=["videos"])
+app.include_router(clips.router)
 
 
 @app.get("/health")
