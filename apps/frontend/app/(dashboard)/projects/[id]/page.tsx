@@ -2,7 +2,9 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { WsProvider } from '@/notifications/ws-provider'
 import { ProjectProgress } from '@/components/dashboard/ProjectProgress'
+import { ClipsGrid } from '@/components/dashboard/ClipsGrid'
 import type { Metadata } from 'next'
+import type { Clip } from '@/types'
 
 export const metadata: Metadata = {
   title: 'Projeto — CutIQ',
@@ -27,6 +29,12 @@ export default async function ProjectPage({ params }: Props) {
 
   if (!project) redirect('/dashboard')
 
+  const { data: clips } = await supabase
+    .from('clips')
+    .select('*')
+    .eq('project_id', id)
+    .order('virality_score', { ascending: false })
+
   return (
     <div className="space-y-6">
       <div>
@@ -36,6 +44,7 @@ export default async function ProjectPage({ params }: Props) {
 
       <WsProvider projectId={id}>
         <ProjectProgress />
+        <ClipsGrid initialClips={(clips ?? []) as Clip[]} projectId={id} />
       </WsProvider>
     </div>
   )

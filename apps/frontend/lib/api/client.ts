@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
-import type { Profile, Project, Video } from '@/types'
+import type { Profile, Project, Video, Clip } from '@/types'
 
 async function getAuthHeader(): Promise<Record<string, string>> {
   const supabase = createClient()
@@ -55,5 +55,9 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ project_id, url }),
       }),
+  },
+  clips: {
+    list: (projectId: string) =>
+      apiFetch<Clip[]>(`/api/clips?project_id=${projectId}`),
   },
 }
