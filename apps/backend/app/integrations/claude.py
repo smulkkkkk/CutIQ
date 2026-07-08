@@ -33,13 +33,16 @@ def detect_clips(segments: list[dict], full_text: str) -> list[dict]:
     )
 
     message = get_claude_client().messages.create(
-        model="claude-sonnet-4",
+        model="claude-sonnet-5",
         max_tokens=4096,
         messages=[{"role": "user", "content": prompt}],
     )
 
     raw = message.content[0].text.strip()
-    clips = json.loads(raw)
+    try:
+        clips = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Claude returned non-JSON response: {raw[:200]}") from exc
 
     result = []
     for clip in clips:
