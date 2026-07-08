@@ -31,8 +31,8 @@ async def test_analyze_video_success():
         patch("app.workers.analyze.ProjectRepository") as MockProjRepo,
         patch("app.workers.analyze.detect_clips", return_value=mock_clips),
         patch("app.workers.analyze.emit_analyzing", new_callable=AsyncMock),
-        patch("app.workers.analyze.emit_analyzed", new_callable=AsyncMock),
-        patch("app.workers.analyze.emit_completed", new_callable=AsyncMock),
+        patch("app.workers.analyze.emit_analyzed", new_callable=AsyncMock) as mock_emit_analyzed,
+        patch("app.workers.analyze.emit_completed", new_callable=AsyncMock) as mock_emit_completed,
     ):
         from app.workers.analyze import analyze_video
         await analyze_video({}, video_id="vid-1", project_id="proj-1")
@@ -47,6 +47,9 @@ async def test_analyze_video_success():
         virality_reasons=["Gancho forte"],
     )
     mock_job_repo.update.assert_any_call("job-1", status="completed", progress=100)
+    MockProjRepo.return_value.update_status.assert_called_once_with("proj-1", "completed")
+    mock_emit_analyzed.assert_called_once_with("proj-1", 1)
+    mock_emit_completed.assert_called_once_with("proj-1")
 
 
 @pytest.mark.asyncio
