@@ -4,6 +4,7 @@ from datetime import datetime
 from app.main import app
 from app.api.deps import get_current_user
 from app.models.clip import Clip
+from app.models.project import Project
 
 MOCK_USER = MagicMock(id="user-1", email="test@example.com")
 MOCK_CLIP = Clip(
@@ -14,6 +15,14 @@ MOCK_CLIP = Clip(
     status="pending", r2_key=None, thumbnail_r2_key=None,
     resolution="720p", has_watermark=True, caption_style="default",
     created_at=datetime(2026, 7, 8), updated_at=datetime(2026, 7, 8),
+)
+MOCK_PROJECT = Project(
+    id="proj-1",
+    user_id="user-1",
+    title="Test Project",
+    status="created",
+    created_at=datetime(2026, 7, 8),
+    updated_at=datetime(2026, 7, 8),
 )
 
 
@@ -26,10 +35,16 @@ def override_auth():
 
 @pytest.mark.asyncio
 async def test_list_clips_returns_200(client):
-    with patch("app.api.routes.clips.ClipRepository") as mock_repo_cls:
+    with patch("app.api.routes.clips.ProjectRepository") as mock_proj_cls, \
+         patch("app.api.routes.clips.ClipRepository") as mock_repo_cls:
+        mock_proj = MagicMock()
+        mock_proj.get_by_id.return_value = MOCK_PROJECT
+        mock_proj_cls.return_value = mock_proj
+
         mock_repo = MagicMock()
         mock_repo.get_by_project.return_value = [MOCK_CLIP]
         mock_repo_cls.return_value = mock_repo
+
         response = await client.get("/api/clips?project_id=proj-1")
     assert response.status_code == 200
     data = response.json()
@@ -42,3 +57,33 @@ async def test_list_clips_returns_200(client):
 async def test_list_clips_missing_project_id(client):
     response = await client.get("/api/clips")
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_list_clips_foreign_project_returns_404(client):
+    with patch("app.api.routes.clips.ProjectRepository") as mock_proj_cls:
+        mock_proj = MagicMock()
+        mock_proj.get_by_id.return_value = None
+        mock_proj_cls.return_value = mock_proj
+
+        response = await client.get("/api/clips?project_id=foreign-proj")
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_list_clips_wrong_owner_returns_404(client):
+    foreign_project = Project(
+        id="foreign-proj",
+        user_id="other-user",
+        title="Someone else's project",
+        status="created",
+        created_at=datetime(2026, 7, 8),
+        updated_at=datetime(2026, 7, 8),
+    )
+    with patch("app.api.routes.clips.ProjectRepository") as mock_proj_cls:
+        mock_proj = MagicMock()
+        mock_proj.get_by_id.return_value = foreign_project
+        mock_proj_cls.return_value = mock_proj
+
+        response = await client.get("/api/clips?project_id=foreign-proj")
+    assert response.status_code == 404
