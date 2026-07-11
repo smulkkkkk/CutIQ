@@ -3,6 +3,7 @@ from arq.connections import RedisSettings
 from app.core.config import settings
 from app.workers.transcribe import transcribe_video
 from app.workers.analyze import analyze_video
+from app.workers.render import render_clip_job
 
 _pool = None
 
@@ -30,7 +31,7 @@ async def shutdown(ctx: dict) -> None:
 
 
 class WorkerSettings:
-    functions = [transcribe_video, analyze_video]
+    functions = [transcribe_video, analyze_video, render_clip_job]
     redis_settings = RedisSettings.from_dsn(settings.redis_url)
     on_startup = startup
     on_shutdown = shutdown
