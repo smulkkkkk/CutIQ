@@ -1,4 +1,4 @@
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 import pytest
 
 
@@ -65,3 +65,11 @@ def test_generate_thumbnail_raises_on_failure():
         from app.integrations.ffmpeg import generate_thumbnail
         with pytest.raises(RuntimeError, match="FFmpeg thumbnail failed"):
             generate_thumbnail("clip.mp4", "thumb.jpg")
+
+
+def test_render_clip_unknown_resolution_falls_back_to_720p():
+    with patch("app.integrations.ffmpeg.subprocess.run", side_effect=_run_ok) as mock_run:
+        from app.integrations.ffmpeg import render_clip
+        render_clip("in.mp4", "out.mp4", 0.0, 30.0, resolution="unknown_res", has_watermark=False)
+    vf = " ".join(mock_run.call_args[0][0])
+    assert "scale=720:1280" in vf
