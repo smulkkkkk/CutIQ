@@ -22,6 +22,12 @@ async def render_clip_job(_ctx: dict, *, clip_id: str, project_id: str) -> None:
     video_repo = VideoRepository()
     video = video_repo.get_by_id(clip.video_id)
     if not video or not video.r2_key:
+        clip_repo.update(clip_id, status="failed")
+        all_clips = clip_repo.get_by_project(project_id)
+        if all(c.status in ("ready", "failed") for c in all_clips):
+            ProjectRepository().update_status(project_id, "completed")
+            await emit_completed(project_id)
+        await emit_failed(project_id, "Source video not available")
         return
 
     try:
@@ -84,19 +90,22 @@ async def render_clip_job(_ctx: dict, *, clip_id: str, project_id: str) -> None:
         thumbnail_url = generate_presigned_download_url(thumb_key, expires_in=86400)
         clip_repo.update(clip_id, status="ready", r2_key=r2_key, thumbnail_r2_key=thumb_key)
         await emit_rendering(project_id, clip_id, 100)
+        await emit_clip_ready(project_id, clip_id, thumbnail_url)
 
         all_clips = clip_repo.get_by_project(project_id)
         if all(c.status in ("ready", "failed") for c in all_clips):
-            ProjectRepository().update_status(project_id, "completed")
-            await emit_completed(project_id)
-
-        await emit_clip_ready(project_id, clip_id, thumbnail_url)
+            proj = ProjectRepository().get_by_id(project_id)
+            if proj and proj.status not in ("completed", "failed"):
+                ProjectRepository().update_status(project_id, "completed")
+                await emit_completed(project_id)
 
     except Exception as e:
         clip_repo.update(clip_id, status="failed")
         all_clips = clip_repo.get_by_project(project_id)
         if all(c.status in ("ready", "failed") for c in all_clips):
-            ProjectRepository().update_status(project_id, "completed")
-            await emit_completed(project_id)
+            proj = ProjectRepository().get_by_id(project_id)
+            if proj and proj.status not in ("completed", "failed"):
+                ProjectRepository().update_status(project_id, "completed")
+                await emit_completed(project_id)
         await emit_failed(project_id, str(e))
         raise
