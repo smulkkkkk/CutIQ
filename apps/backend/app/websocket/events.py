@@ -13,6 +13,12 @@ async def emit_analyzing(project_id: str, progress: int) -> None:
     await ws_manager.send_to_project(project_id, {"stage": "analyzing", "progress": progress})
 
 
+async def emit_rendering(project_id: str, clip_id: str, progress: int) -> None:
+    await ws_manager.send_to_project(
+        project_id, {"stage": "rendering", "clip_id": clip_id, "progress": progress}
+    )
+
+
 async def emit_analyzed(project_id: str, clips_count: int) -> None:
     await ws_manager.send_to_project(project_id, {"stage": "analyzed", "clips_count": clips_count})
 

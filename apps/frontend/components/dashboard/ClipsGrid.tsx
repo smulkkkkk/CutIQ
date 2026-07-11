@@ -12,7 +12,11 @@ export function ClipsGrid({ initialClips, projectId }: { initialClips: Clip[]; p
   const { latestEvent } = useWsContext()
 
   useEffect(() => {
-    if (latestEvent?.stage === 'analyzed' || latestEvent?.stage === 'completed') {
+    if (
+      latestEvent?.stage === 'analyzed' ||
+      latestEvent?.stage === 'clip_ready' ||
+      latestEvent?.stage === 'completed'
+    ) {
       router.refresh()
     }
   }, [latestEvent, router])

@@ -59,5 +59,7 @@ export const api = {
   clips: {
     list: (projectId: string) =>
       apiFetch<Clip[]>(`/api/clips?project_id=${projectId}`),
+    download: (clipId: string) =>
+      apiFetch<{ download_url: string; filename: string }>(`/api/clips/${clipId}/download`),
   },
 }
