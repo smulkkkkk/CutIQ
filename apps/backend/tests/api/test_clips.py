@@ -87,3 +87,66 @@ async def test_list_clips_wrong_owner_returns_404(client):
 
         response = await client.get("/api/clips?project_id=foreign-proj")
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_download_clip_returns_url(client):
+    mock_clip = Clip(
+        id="clip-1", project_id="proj-1", video_id="vid-1",
+        title="Test", start_time=0.0, end_time=45.0, duration=45.0,
+        virality_score=80, virality_reasons=[], status="ready",
+        r2_key="clips/clip-1/clip.mp4", thumbnail_r2_key=None,
+        resolution="720p", has_watermark=True, caption_style="default",
+        created_at=datetime(2026, 7, 8), updated_at=datetime(2026, 7, 8),
+    )
+    mock_project = MagicMock()
+    mock_project.user_id = "user-1"
+
+    mock_clip_repo = MagicMock()
+    mock_clip_repo.get_by_id.return_value = mock_clip
+
+    with (
+        patch("app.api.routes.clips.ClipRepository", return_value=mock_clip_repo),
+        patch("app.api.routes.clips.ProjectRepository") as MockProjRepo,
+        patch("app.api.routes.clips.generate_presigned_download_url", return_value="https://storage/clip.mp4"),
+    ):
+        MockProjRepo.return_value.get_by_id.return_value = mock_project
+        response = await client.get("/api/clips/clip-1/download")
+    assert response.status_code == 200
+    data = response.json()
+    assert "download_url" in data
+    assert data["download_url"] == "https://storage/clip.mp4"
+    assert "filename" in data
+    assert data["filename"] == "Test.mp4"
+
+
+@pytest.mark.asyncio
+async def test_download_clip_not_found_returns_404(client):
+    mock_clip_repo = MagicMock()
+    mock_clip_repo.get_by_id.return_value = None
+    with patch("app.api.routes.clips.ClipRepository", return_value=mock_clip_repo):
+        response = await client.get("/api/clips/nonexistent/download")
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_download_clip_not_ready_returns_404(client):
+    mock_clip = Clip(
+        id="clip-1", project_id="proj-1", video_id="vid-1",
+        title="Test", start_time=0.0, end_time=45.0, duration=45.0,
+        virality_score=80, virality_reasons=[], status="pending",
+        r2_key=None, thumbnail_r2_key=None,
+        resolution="720p", has_watermark=True, caption_style="default",
+        created_at=datetime(2026, 7, 8), updated_at=datetime(2026, 7, 8),
+    )
+    mock_project = MagicMock()
+    mock_project.user_id = "user-1"
+    mock_clip_repo = MagicMock()
+    mock_clip_repo.get_by_id.return_value = mock_clip
+    with (
+        patch("app.api.routes.clips.ClipRepository", return_value=mock_clip_repo),
+        patch("app.api.routes.clips.ProjectRepository") as MockProjRepo,
+    ):
+        MockProjRepo.return_value.get_by_id.return_value = mock_project
+        response = await client.get("/api/clips/clip-1/download")
+    assert response.status_code == 404
