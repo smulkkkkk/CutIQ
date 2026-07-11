@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock, patch, AsyncMock, ANY
 from datetime import datetime
 
 
@@ -70,8 +70,7 @@ async def test_render_clip_job_success():
     mock_clip_ready.assert_called_once_with("proj-1", "clip-1", "https://example.com/thumb.jpg")
     mock_completed.assert_called_once_with("proj-1")
     MockProjRepo.return_value.update_status.assert_called_once_with("proj-1", "completed")
-    update_calls = mock_clip_repo.update.call_args_list
-    assert "ready" in str(update_calls)
+    mock_clip_repo.update.assert_any_call("clip-1", status="ready", r2_key=ANY, thumbnail_r2_key=ANY)
 
 
 @pytest.mark.asyncio
@@ -104,7 +103,7 @@ async def test_render_clip_job_failure_marks_clip_failed():
         patch("app.workers.render.ClipRepository", return_value=mock_clip_repo),
         patch("app.workers.render.VideoRepository", return_value=mock_video_repo),
         patch("app.workers.render.get_supabase", return_value=mock_supabase),
-        patch("app.workers.render.ProjectRepository"),
+        patch("app.workers.render.ProjectRepository") as MockProjRepo,
         patch("app.workers.render.download_to_path", side_effect=RuntimeError("storage down")),
         patch("app.workers.render.upload_from_path"),
         patch("app.workers.render.generate_presigned_download_url"),
@@ -113,7 +112,7 @@ async def test_render_clip_job_failure_marks_clip_failed():
         patch("app.workers.render.generate_ass_subtitles", return_value=""),
         patch("app.workers.render.emit_rendering", new_callable=AsyncMock),
         patch("app.workers.render.emit_clip_ready", new_callable=AsyncMock),
-        patch("app.workers.render.emit_completed", new_callable=AsyncMock),
+        patch("app.workers.render.emit_completed", new_callable=AsyncMock) as mock_completed,
         patch("app.workers.render.emit_failed", new_callable=AsyncMock) as mock_failed,
     ):
         from app.workers.render import render_clip_job
@@ -123,3 +122,6 @@ async def test_render_clip_job_failure_marks_clip_failed():
     # clip updated to failed
     update_kwargs = {k: v for call in mock_clip_repo.update.call_args_list for k, v in call[1].items()}
     assert update_kwargs.get("status") == "failed"
+    mock_failed.assert_called_once_with("proj-1", "storage down")
+    MockProjRepo.return_value.update_status.assert_called_once_with("proj-1", "completed")
+    mock_completed.assert_called_once_with("proj-1")
